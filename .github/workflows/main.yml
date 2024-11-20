@@ -4,30 +4,49 @@ on:
   push:
     branches:
       - master
+  pull_request:
+    branches:
+      - master
 
 jobs:
   build:
-    name: Build
+    name: Build and Scan
     runs-on: ubuntu-latest
+    env:
+      GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
+      REPO_URL: https://github.com/MindPatch/hacking-lab/
+      SONAR_PROJECTKEY: MW1y0ahWyGjulTZd
+      SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
         with:
-          fetch-depth: 0  # Shallow clones should be disabled for a better relevancy of analysis
-      - uses: sonarsource/sonarqube-scan-action@master
+          fetch-depth: 0
+
+      - name: Pull Blacklock Code Scanner Docker Image
+        run: docker pull blacklocksec/code-scanner:latest
+
+      - name: Run Blacklock Code Scanner
+        run: |
+          docker run --rm -v $(pwd):/app \
+            -e SONAR_PROJECTKEY=${{ env.SONAR_PROJECTKEY }} \
+            -e SONAR_HOST_URL=${{ env.SONAR_HOST_URL }} \
+            -e SONAR_TOKEN=${{ env.SONAR_TOKEN }} \
+            -e GIT_TOKEN=${{ env.GIT_TOKEN }} \
+            -e REPO_URL=${{ env.REPO_URL }} \
+            blacklocksec/code-scanner:latest
+
+      - name: Run SonarQube Scan
+        uses: sonarsource/sonarqube-scan-action@master
         env:
-          
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
       # If you wish to fail your job when the Quality Gate is red, uncomment the
       # following lines. This would typically be used to fail a deployment.
       # - uses: sonarsource/sonarqube-quality-gate-action@master
       #   timeout-minutes: 5
       #   env:
       #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-
-      - name: Pull Blacklock Code Scanner Docker Image
-        run: docker pull blacklocksec/code-scanner:latest
-
-      - name: Run Blacklock Code Scanner
-        run: docker run --rm -v $(pwd):/app -e SONAR_PROJECTKEY="MW1y0ahWyGjulTZd" -e SONAR_HOST_URL=${{ secrets.SONAR_HOST_URL }} -e SONAR_TOKEN=${{ secrets.SONAR_TOKEN }}  blacklocksec/code-scanner:dev
-      
