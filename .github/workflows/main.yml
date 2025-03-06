@@ -15,7 +15,7 @@ jobs:
     env:
       GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
       REPO_URL: https://github.com/MindPatch/hacking-lab/
-      SONAR_PROJECTKEY: MW1y0ahWyGjulTZd
+      SONAR_PROJECTKEY: gradle-finish
       SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
@@ -31,7 +31,7 @@ jobs:
       - name: Run Blacklock Code Scanner
         run: |
           docker run --rm -v $(pwd):/app \
-            -e SONAR_PROJECTKEY=${{ env.SONAR_PROJECTKEY }} \
+            -e SONAR_PROJECTKEY='gradle-finish' \
             -e SONAR_HOST_URL=${{ env.SONAR_HOST_URL }} \
             -e SONAR_TOKEN=${{ env.SONAR_TOKEN }} \
             -e GIT_TOKEN=${{ env.GIT_TOKEN }} \
