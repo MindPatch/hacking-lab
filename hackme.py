@@ -1,6 +1,6 @@
 __author__ = 'Khaled Nassar'
 # test
-# all the imports
+# all the importsi
 import sqlite3,time,datetime,cgi,os,subprocess
 from flask import Flask, request, session, g, redirect, url_for, \
         abort, render_template, flash,make_response
