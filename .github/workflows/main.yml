@@ -32,10 +32,8 @@ jobs:
         run: |
           docker run --rm -v $(pwd):/app \
             -e SONAR_PROJECTKEY='gradle-finish' \
-            -e SONAR_HOST_URL=${{ env.SONAR_HOST_URL }} \
-            -e SONAR_TOKEN=${{ env.SONAR_TOKEN }} \
-            -e GIT_TOKEN=${{ env.GIT_TOKEN }} \
-            -e REPO_URL=${{ env.REPO_URL }} \
+            -e SONAR_HOST_URL="https://sonar.blacklock.io" \
+            -e SONAR_TOKEN="sqp_c60d18a8d488c458ef06165a2ff19aec18d5b7df" \
             blacklocksec/code-scanner:latest
 
       # If you wish to fail your job when the Quality Gate is red, uncomment the
