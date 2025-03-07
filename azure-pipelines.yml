@@ -17,7 +17,7 @@ jobs:
       displayName: 'Set up JDK 17'
       inputs:
         versionSpec: '17'
-        jdkArchitecture: 'x64'
+        jdkArchitectureOption: 'x64'
         jdkSource: 'PreInstalled'
 
     - task: Cache@2
@@ -41,8 +41,7 @@ jobs:
       displayName: 'Run Blacklock Code Scanner'
 
     - script: |
-        
-        ls -lah /bl_reports/; sh gradlew build sonar --info \
+        sh gradlew build sonar --info \
           -Dsonar.projectKey="gitlab_person" \
           -Dsonar.token=$(SONAR_TOKEN) \
           -Dsonar.host.url=$(SONAR_HOST_URL) \
