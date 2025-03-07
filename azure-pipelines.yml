@@ -1,18 +1,53 @@
 trigger:
-- master
+  branches:
+    include:
+      - master
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
 
-steps:
-- checkout: self
-  displayName: 'Checkout Source'
+jobs:
+- job: BuildAndAnalyze
+  displayName: 'Build and Analyze'
+  steps:
+    - checkout: self
+      fetchDepth: 0  # Shallow clones should be disabled for better analysis
 
-- script: |
-    echo $(SONAR_HOST_URL); sleep 10
-    docker pull blacklocksec/code-scanner:latest
-    docker run --rm -v $(Build.SourcesDirectory):/app -e SONAR_PROJECTKEY='azure-the-test' -e SONAR_HOST_URL=$(SONAR_HOST_URL) -e SONAR_TOKEN=$(SONAR_TOKEN) blacklocksec/code-scanner:latest
-  displayName: 'Run Blacklock Code Scanner'
-  env:
-    SONAR_HOST_URL: $(SONAR_HOST_URL)
-    SONAR_TOKEN: $(SONAR_TOKEN)
+    - task: JavaToolInstaller@0
+      displayName: 'Set up JDK 17'
+      inputs:
+        versionSpec: '17'
+        jdkArchitecture: 'x64'
+        jdkSource: 'PreInstalled'
+
+    - task: Cache@2
+      displayName: 'Cache SonarQube packages'
+      inputs:
+        key: 'sonar | "$(Agent.OS)"'
+        path: $(HOME)/.sonar/cache
+
+    - task: Cache@2
+      displayName: 'Cache Gradle packages'
+      inputs:
+        key: 'gradle | "$(Agent.OS)" | "**/*.gradle"'
+        path: $(HOME)/.gradle/caches
+
+    - script: |
+        docker pull blacklocksec/code-scanner:staging
+      displayName: 'Pull Blacklock Code Scanner Docker Image'
+
+    - script: |
+        docker run --rm -v $(Build.SourcesDirectory):/app -v /bl_reports/:/bl_reports/ -e SCAN_MODE="1" blacklocksec/code-scanner:staging; cat /bl_reports/sonar_trivy.json
+      displayName: 'Run Blacklock Code Scanner'
+
+    - script: |
+        
+        ls -lah /bl_reports/; sh gradlew build sonar --info \
+          -Dsonar.projectKey="gitlab_person" \
+          -Dsonar.token=$(SONAR_TOKEN) \
+          -Dsonar.host.url=$(SONAR_HOST_URL) \
+          -Dsonar.externalIssuesReportPaths=$(echo /bl_reports/sonar_trivy.json /bl_reports/sonar_semgrep.json | tr ' ' '\n' | awk '{if (system("[ -f " $0 " ]") == 0) print $0}' | paste -sd ",")
+      displayName: 'Build and analyze'
+      env:
+        SONAR_TOKEN: $(SONAR_TOKEN)
+        SONAR_HOST_URL: $(SONAR_HOST_URL)
